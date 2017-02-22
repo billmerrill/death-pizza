@@ -93,11 +93,35 @@ function makeJustifiedLineOfText(text, weight, depth, origin, canvas_width) {
     return obj;
 }
 
-function prepareEpiText(words) {
-    var lines = words.trim().split("\n");
-    for (var l in lines) {
-        lines[l] = lines[l].trim();
+function prepareEpiText(words, config) {
+    /**
+    Prepare the Epitaph.
+    A- If an epitaph has new lines, use its formatting.
+    B- If it has none, break it down in to lines of canvas.freeform_text_width length
+    **/
+    var lines = [],
+        line = "",
+        char_max = config.canvas.freeform_text_width,
+        wp, word_parts;
+
+    words = words.trim();
+    if (words.includes("\n")) {
+        lines = words.split(/[\n]+/);
+        lines.forEach(function(l, i, arr) {arr[i] = l.trim();});
+    } else {
+        word_parts = words.split(/[ \t]+/);
+        for (wp in word_parts) {
+            if ((line.length + word_parts[wp].length + 1) > char_max) {
+                lines.push(line);
+                line = "";
+            }
+            if (word_parts[wp].length > 0) {
+                line += " " + word_parts[wp];
+            }
+        }
+        lines.push(line);
     }
+
     return lines;
 }
 
@@ -145,7 +169,7 @@ function layout(words, config) {
     dateSpanObj = dateSpanObj.translate(o);
 
 
-    var epTexts = prepareEpiText(words.epitaph);
+    var epTexts = prepareEpiText(words.epitaph, config);
     var epiObjs = [];
     var epObj, epBounds, epSize, epScale;
 
@@ -190,23 +214,27 @@ function main(param) {
     var big_words = {lastName:"mmmmmmmmmmmmmmmmmmmm",
                 firstName:"mmmmmmmmmmmmmmmmmmmm",
                 dateSpan:"1975 - 2017",
-                epitaph:"mmmm mmmmmmm mmmmmmm mmmmmmm mmmmmm mmmmmmmmm"};
+                epitaph:"mmmm mmmm mmmm mmmm mmmm mmmmmmm mmmmmmm mmmmmm mmmmmmmmm"};
     var bill_words = {lastName:"MERRILL",
                 firstName:"William Leo",
                 dateSpan:"1975 - 2017",
                 epitaph:"Man can ask\nGod gives no more"};
     var andrew_words = {lastName:"COLE",
                 firstName:"Andrew O'Connor",
-                dateSpan:"1983 - 2017",
-                epitaph:"kinda cool to have something\n named after you, kinda less\ncool if it is a shit bug"};
-    var layout_config = { 'canvas': { 'width': 100.0},
+                dateSpan:"1982 - 2017",
+                epitaph:"kinda cool to have something named after you, kinda less cool if it is a shit bug"};
+                // epitaph:"kinda cool to have something\n named after you, kinda less\ncool if it is a shit bug"};
+    var layout_config = { 'canvas': { 'width': 100.0,
+                                      'freeform_text_width': 25},
                       'lastName': {'weight': 4, 'depth': 10},
                       'firstName': {'weight': 4, 'depth': 10},
                       'dateSpan': {'weight': 4, 'depth': 10},
                       'epitaph': {'weight': 4, 'depth': 10}
                     }
     // return test_word();
-    return layout(bill_words, layout_config);
+    var words =  layout(bill_words, layout_config);
+    var stone = create_stone_objects();
+    return words;
     // return union(create_words(test_words)).scale([.1, .1, 1]);
     // return create_stone_objects();
 }
