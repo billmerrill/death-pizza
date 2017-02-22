@@ -108,6 +108,7 @@ function prepareEpiText(words, config) {
     if (words.includes("\n")) {
         lines = words.split(/[\n]+/);
         lines.forEach(function(l, i, arr) {arr[i] = l.trim();});
+        // lines.map(Function.prototype.call, String.prototype.trim);
     } else {
         word_parts = words.split(/[ \t]+/);
         for (wp in word_parts) {
@@ -116,7 +117,11 @@ function prepareEpiText(words, config) {
                 line = "";
             }
             if (word_parts[wp].length > 0) {
-                line += " " + word_parts[wp];
+                if (line.length > 0) {
+                    line += " "
+                }
+                line += word_parts[wp];
+
             }
         }
         lines.push(line);
@@ -173,25 +178,37 @@ function layout(words, config) {
     var epiObjs = [];
     var epObj, epBounds, epSize, epScale;
 
-    o2 = [0,0];
-    var is_first = true;
+    var epiOrigin = [0,0];
+    var maxEpitaphLength = 0;
 
+    // generate lines of epitaph CAD objections
     for (t in epTexts) {
-
         epObj = makeLineOfText(epTexts[t],
                                 config.epitaph.weight,
                                 config.epitaph.depth,
                                 [0,0]);
         epBounds = epObj.getBounds();
         epSize = bounds_size(epBounds);
-        if (is_first) {
-            is_first = false;
-        } else {
-            o2[1] = o2[1] + epSize[1] * -1;
-            epObj = epObj.translate(o2);
+        if (epSize[0] > maxEpitaphLength) {
+            maxEpitaphLength = epSize[0];
         }
+        if (t > 0) {
+            epiOrigin[1] = epiOrigin[1] + epSize[1] * -1;
+        }
+        epObj = epObj.translate(epiOrigin);
         epiObjs.push(epObj);
     }
+
+    // center epitaph lines
+    epiObjs.forEach(function(l, i, arr) {
+        var lSize = bounds_size(l.getBounds());
+        if (lSize[0] != maxEpitaphLength) {
+            // epiObjs[i] = l.translate([10, 0,0]);
+            epiObjs[i] = l.translate([(maxEpitaphLength - lSize[0])/2, 0,0]);
+        }
+    });
+
+
 
     var epitaphObj = union(epiObjs);
     var eoBounds = epitaphObj.getBounds();
@@ -208,13 +225,11 @@ function layout(words, config) {
 }
 
 function main(param) {
-    var o = []; // our stack of objects
-    var l = []; // our stack of line segments (when rendering vector text)
-    var p = []; // our stack of extruded line segments
     var big_words = {lastName:"mmmmmmmmmmmmmmmmmmmm",
                 firstName:"mmmmmmmmmmmmmmmmmmmm",
                 dateSpan:"1975 - 2017",
-                epitaph:"mmmm mmmm mmmm mmmm mmmm mmmmmmm mmmmmmm mmmmmm mmmmmmmmm"};
+                // epitaph:"mmmm mmmm mmmm mmmm mmmm mmmmmmm mmmmmmm mmmmmm mmmmmmmmm"};
+                epitaph:"mmmm mmmm mmmm mmmm mmmm\nmmmmmmm mmmmmmm mmmmmm\nmmmmmmmmm"};
     var bill_words = {lastName:"MERRILL",
                 firstName:"William Leo",
                 dateSpan:"1975 - 2017",
