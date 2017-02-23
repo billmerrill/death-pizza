@@ -11,25 +11,17 @@
 +-+-----------------+-+
 +---------------------+
  */
-
-function create_stone_objects() {
-    var objects = [
-        CSG.cylinder({start:[0,0,-4], end:[0,0,4], radius: 1}).scale([30,10,1]),
-        CSG.cube().scale([30,40,4]).translate([0,-40,0]),
-        CSG.cube().scale([32, 2, 7]).translate([0, -10-12-40-20, 0]),
-        CSG.cube().scale([34, 2, 9]).translate([0, -10-10-6-40-20, 0])];
-    return objects;
-}
-
-
-
 function getBoundsSize(b) {
     return [ b[1].x-b[0].x, b[1].y-b[0].y, b[1].z-b[0].z];
 }
 
 function getObjectSize(o) {
     return getBoundsSize(o.getBounds());
+
 }
+
+
+
 
 function makeLineOfText(text, weight, depth, origin){
     var plines = [];
@@ -85,50 +77,11 @@ function prepareEpiText(words, config) {
     return lines;
 }
 
-function buildEpitaph(words, config) {
-
-}
-
-function layout(words, config) {
-    var em = 20;
-    var o = [0,0]
-
-
-    var lastNameObj = makeLineOfText(words.lastName,
-                               config.lastName.weight,
-                               config.lastName.depth,
-                               [0,0]);
-    var lastNameSize = getObjectSize(lastNameObj)
-    var lnScale = config.canvas.width / lastNameSize[0];
-    lastNameObj = lastNameObj.scale([lnScale, lnScale, 1]);
-
-
-    var firstNameObj = makeLineOfText(words.firstName,
-                               config.firstName.weight,
-                               config.firstName.depth,
-                               [0,0]);
-    var fnSize = getObjectSize(firstNameObj);
-    var fnScale = config.canvas.width / fnSize[0];
-    firstNameObj = firstNameObj.scale([fnScale, fnScale, 1]);
-    fnSize = getObjectSize(firstNameObj);
-    o[1] = fnSize[1] * -2;
-    firstNameObj = firstNameObj.translate(o);
-
-    var dateSpanObj = makeLineOfText(words.dateSpan,
-                               config.dateSpan.weight,
-                               config.dateSpan.depth,
-                               [0,0]);
-    var dsSize = getObjectSize(dateSpanObj);
-    var dsScale = config.canvas.width / dsSize[0];
-    dateSpanObj = dateSpanObj.scale([dsScale, dsScale, 1]);
-    var dsSize = getObjectSize(dateSpanObj);
-    o[1] = o[1] + dsSize[1] * -2
-    dateSpanObj = dateSpanObj.translate(o);
-
+function layoutEpitaph(words, config, o) {
 
     var epTexts = prepareEpiText(words.epitaph, config);
     var epiObjs = [];
-    var epObj, epSize, epScale;
+    var epObj, epSize;
 
     var epiOrigin = [0,0];
     var maxEpitaphLength = 0;
@@ -159,8 +112,6 @@ function layout(words, config) {
         }
     });
 
-
-
     var epitaphObj = union(epiObjs);
     var eoSize = getObjectSize(epitaphObj);
     var eoScale = config.canvas.width / eoSize[0]
@@ -169,7 +120,58 @@ function layout(words, config) {
     o[1] = o[1] + (eoSize[1] * -1.0) ;
     epitaphObj = epitaphObj.translate(o);
 
+    return epitaphObj;
+}
+
+function layoutJustifiedLine(text, weight, depth, canvas_width) {
+    var textObj = makeLineOfText(text, weight, depth, [0,0]);
+    var textSize = getObjectSize(textObj);
+    var textScale = canvas_width / textSize[0];
+    textObj = textObj.scale([textScale, textScale, 1]);
+    textSize = getObjectSize(textObj);
+    canvas_cursor[1] += textSize[1] * -2;
+    textObj = textObj.translate(canvas_cursor);
+    return textObj;
+}
+
+var canvas_cursor;
+function layout(words, config) {
+    var lastNameObj, firstNameObj, dateSpanObj, epitaphObj;
+    var em = 20;
+    // global
+    canvas_cursor = [0,0]
+
+    lastNameObj = makeLineOfText(words.lastName,
+                               config.lastName.weight,
+                               config.lastName.depth,
+                               [0,0]);
+    var lastNameSize = getObjectSize(lastNameObj)
+    var lnScale = config.canvas.width / lastNameSize[0];
+    lastNameObj = lastNameObj.scale([lnScale, lnScale, 1]);
+
+
+    var firstNameObj = layoutJustifiedLine(words.firstName,
+                               config.firstName.weight,
+                               config.firstName.depth,
+                               config.canvas.width);
+
+    var dateSpanObj = layoutJustifiedLine(words.dateSpan,
+                                        config.dateSpan.weight,
+                                        config.dateSpan.depth,
+                                        config.canvas.width);
+
+    var epitaphObj = layoutEpitaph(words, config, canvas_cursor);
+
     return union(lastNameObj, firstNameObj, dateSpanObj, epitaphObj);
+}
+
+function createStone() {
+    var objects = [
+        CSG.cylinder({start:[0,0,-4], end:[0,0,4], radius: 1}).scale([30,10,1]),
+        CSG.cube().scale([30,40,4]).translate([0,-40,0]),
+        CSG.cube().scale([32, 2, 7]).translate([0, -10-12-40-20, 0]),
+        CSG.cube().scale([34, 2, 9]).translate([0, -10-10-6-40-20, 0])];
+    return objects;
 }
 
 function main(param) {
@@ -194,6 +196,6 @@ function main(param) {
                       'epitaph': {'weight': 4, 'depth': 10}
                     }
     var words =  layout(bill_words, layout_config);
-    var stone = create_stone_objects();
+    var stone = createStone();
     return words;
 }
