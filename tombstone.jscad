@@ -237,11 +237,20 @@ function make_signature(c1, c2, config) {
     return sigObj;
 }
 
+function scale_to_bounds(obj, bounds){
+    var objSize = getObjectSize(obj),
+        scales = [bounds[0]/objSize[0], bounds[1]/objSize[1], bounds[2]/objSize[2]]
+        scale = Math.min(bounds[0]/objSize[0], bounds[1]/objSize[1], bounds[2]/objSize[2]);
+    console.log('scaling by ' + scale);
+    obj = obj.scale(scale, scale, scale);
+    return obj;
+}
 
-function build_tombstone(textConfig, layoutConfig) {
+function build_tombstone(textConfig, layoutConfig, maxBounds) {
     var words =  layout(textConfig, layoutConfig);
     var stone = wrapWords(words, layoutConfig);
-    return difference(stone, words);
+    var monument = difference(stone, words);
+    return scale_to_bounds(monument, maxBounds);
 }
 
 function main(param) {
@@ -270,5 +279,6 @@ function main(param) {
                                     'base_dims': [10, 10, 10]
                                     }
                     }
-    return build_tombstone(big_words, layout_config);
+    var target_size = [100, 100, 100];
+    return build_tombstone(andrew_words, layout_config, target_size);
 }
