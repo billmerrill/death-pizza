@@ -250,6 +250,9 @@ function build_tombstone(textConfig, layoutConfig, maxBounds) {
     var words =  layout(textConfig, layoutConfig);
     var stone = wrapWords(words, layoutConfig);
     var monument = difference(stone, words);
+    monument = monument.center();
+    monument = monument.rotateX(90);
+
     return scale_to_bounds(monument, maxBounds);
 }
 
