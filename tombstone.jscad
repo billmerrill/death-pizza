@@ -74,7 +74,7 @@ function prepare_epitaph_text(words, config) {
 
 function layout_epitaph(words, config, o) {
     var epTexts = prepare_epitaph_text(words.epitaph, config),
-        t,
+        t, epLineHeight,
         epiObjs = [],
         epiOrigin = [0, 0],
         maxEpitaphLength = 0,
@@ -87,12 +87,15 @@ function layout_epitaph(words, config, o) {
             config.epitaph.weight,
             config.epitaph.depth, [0, 0]);
         epSize = get_object_size(epObj);
+        if (t == 0) {
+            epLineHeight = epSize[1];
+        }
 
         if (epSize[0] > maxEpitaphLength) {
             maxEpitaphLength = epSize[0];
         }
         if (t > 0) {
-            epiOrigin[1] = epiOrigin[1] + epSize[1] * -1;
+            epiOrigin[1] = epiOrigin[1] + epLineHeight * -1;
         }
         epObj = epObj.translate(epiOrigin);
         epiObjs.push(epObj);
