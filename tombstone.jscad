@@ -14,15 +14,15 @@
 
 var GLOBAL_CANVAS_CURSOR;
 
-function getBoundsSize(b) {
+function get_bounds_size(b) {
     return [b[1].x - b[0].x, b[1].y - b[0].y, b[1].z - b[0].z];
 }
 
-function getObjectSize(o) {
-    return getBoundsSize(o.getBounds());
+function get_object_size(o) {
+    return get_bounds_size(o.getBounds());
 }
 
-function makeLineOfText(text, weight, depth, origin) {
+function make_line_of_text(text, weight, depth, origin) {
     var plines = [],
         l = vector_text(0, 0, text);
     l.forEach(function(s) {
@@ -35,7 +35,7 @@ function makeLineOfText(text, weight, depth, origin) {
     return union(plines).translate([origin[0], origin[1], 0]);
 }
 
-function prepareEpiText(words, config) {
+function prepare_epitaph_text(words, config) {
     /**
     Prepare the epitaph in to an array of lines
     A- If an epitaph has new lines, use its formatting.
@@ -72,8 +72,8 @@ function prepareEpiText(words, config) {
     return lines;
 }
 
-function layoutEpitaph(words, config, o) {
-    var epTexts = prepareEpiText(words.epitaph, config),
+function layout_epitaph(words, config, o) {
+    var epTexts = prepare_epitaph_text(words.epitaph, config),
         t,
         epiObjs = [],
         epiOrigin = [0, 0],
@@ -83,10 +83,10 @@ function layoutEpitaph(words, config, o) {
 
     // generate lines of epitaph CAD objections
     for (t in epTexts) {
-        epObj = makeLineOfText(epTexts[t],
+        epObj = make_line_of_text(epTexts[t],
             config.epitaph.weight,
             config.epitaph.depth, [0, 0]);
-        epSize = getObjectSize(epObj);
+        epSize = get_object_size(epObj);
 
         if (epSize[0] > maxEpitaphLength) {
             maxEpitaphLength = epSize[0];
@@ -100,7 +100,7 @@ function layoutEpitaph(words, config, o) {
 
     // center epitaph lines
     epiObjs.forEach(function(l, i, arr) {
-        var lSize = getObjectSize(l);
+        var lSize = get_object_size(l);
         if (lSize[0] != maxEpitaphLength) {
             // epiObjs[i] = l.translate([10, 0,0]);
             epiObjs[i] = l.translate([(maxEpitaphLength - lSize[0]) / 2, 0, 0]);
@@ -108,14 +108,14 @@ function layoutEpitaph(words, config, o) {
     });
 
     epitaphObj = union(epiObjs);
-    eoSize = getObjectSize(epitaphObj);
+    eoSize = get_object_size(epitaphObj);
     eoScale = config.canvas.width / eoSize[0]
     if (eoScale > 1) {
         eoScale = 1;
     }
     epitaphObj = epitaphObj.scale([eoScale, eoScale, 1]);
 
-    eoSize = getObjectSize(epitaphObj)
+    eoSize = get_object_size(epitaphObj)
     // add the height of single line for cussor spacing
     GLOBAL_CANVAS_CURSOR[1] += -1 * (epSize[1] * eoScale);
     epitaphObj = epitaphObj.translate(GLOBAL_CANVAS_CURSOR);
@@ -124,16 +124,16 @@ function layoutEpitaph(words, config, o) {
 }
 
 
-function layoutJustifiedLine(text, weight, depth, canvas_width, margins, max_scale = 1) {
+function layout_justified_line(text, weight, depth, canvas_width, margins, max_scale = 1) {
     // GLOBAL_CANVAS_CURSOR is global
-    var textObj = makeLineOfText(text, weight, depth, [0, 0]),
-        textSize = getObjectSize(textObj),
+    var textObj = make_line_of_text(text, weight, depth, [0, 0]),
+        textSize = get_object_size(textObj),
         textScale = canvas_width / textSize[0];
     if (textScale > max_scale) {
         textScale = max_scale;
     }
     textObj = textObj.scale([textScale, textScale, 1]);
-    textSize = getObjectSize(textObj);
+    textSize = get_object_size(textObj);
     GLOBAL_CANVAS_CURSOR[1] += textSize[1] * -1;
     textObj = textObj.translate(GLOBAL_CANVAS_CURSOR);
     GLOBAL_CANVAS_CURSOR[1] += -1 * textSize[1] * margins.bottom;
@@ -148,7 +148,7 @@ function layout(words, config) {
     var maxTextLineWidth, textObjs;
 
     textObjs = [
-        layoutJustifiedLine(words.lastName,
+        layout_justified_line(words.lastName,
             config.lastName.weight,
             config.lastName.depth,
             config.canvas.width, {
@@ -156,7 +156,7 @@ function layout(words, config) {
             },
             1
         ),
-        layoutJustifiedLine(words.firstName,
+        layout_justified_line(words.firstName,
             config.firstName.weight,
             config.firstName.depth,
             config.canvas.width, {
@@ -164,21 +164,21 @@ function layout(words, config) {
             },
             .5
         ),
-        layoutJustifiedLine(words.dateSpan,
+        layout_justified_line(words.dateSpan,
             config.dateSpan.weight,
             config.dateSpan.depth,
             config.canvas.width, {
                 'bottom': .5
             },
             .5),
-        layoutEpitaph(words, config, GLOBAL_CANVAS_CURSOR)
+        layout_epitaph(words, config, GLOBAL_CANVAS_CURSOR)
     ];
 
     maxTextLineWidth = Math.max(...textObjs.map(function(x) {
-        return getObjectSize(x)[0];
+        return get_object_size(x)[0];
     }));
     textObjs.forEach(function(l, i, arr) {
-        var lSize = getObjectSize(l);
+        var lSize = get_object_size(l);
         if (lSize[0] != maxTextLineWidth) {
             textObjs[i] = l.translate([(maxTextLineWidth - lSize[0]) / 2, 0, 0]);
         }
@@ -187,7 +187,7 @@ function layout(words, config) {
     return union(...textObjs);
 }
 
-function createStone() {
+function create_stone() {
     var objects = [
         CSG.cylinder({
             start: [0, 0, -4],
@@ -201,9 +201,9 @@ function createStone() {
     return objects;
 }
 
-function wrapWords(words, config) {
+function build_stone_around_words(words, config) {
     var wordsSize, p, c1, c2, objects, monument;
-    wordsSize = getObjectSize(words);
+    wordsSize = get_object_size(words);
     p = config.monument.padding
     bodyZ = config.monument.body_thickness
     step = config.monument.base_dims;
@@ -244,19 +244,19 @@ function make_signature(c1, c2, config) {
     var bodyZ = config.monument.body_thickness,
         step = config.monument.base_dims,
         sigObj, sigSize, sigScale;
-    sigObj = makeLineOfText("soon.rip", 3, 20, [0, 0]);
-    sigSize = getObjectSize(sigObj);
+    sigObj = make_line_of_text("soon.rip", 3, 20, [0, 0]);
+    sigSize = get_object_size(sigObj);
     sigScale = (step[1] * .8) / sigSize[1];
     sigObj = sigObj.scale(sigScale, sigScale, 0);
     sigObj = sigObj.rotateY(180);
-    sigSize = getObjectSize(sigObj);
+    sigSize = get_object_size(sigObj);
     sigObj = sigObj.translate([1.5 * step[1], c2[1] - (.85 * sigSize[1]), -1 * step[2] - .7 * (bodyZ / 2)]);
 
     return sigObj;
 }
 
 function scale_to_bounds(obj, bounds) {
-    var objSize = getObjectSize(obj),
+    var objSize = get_object_size(obj),
         scales = [bounds[0] / objSize[0], bounds[1] / objSize[1], bounds[2] / objSize[2]]
     scale = Math.min(bounds[0] / objSize[0], bounds[1] / objSize[1], bounds[2] / objSize[2]);
     obj = obj.scale(scale, scale, scale);
@@ -267,7 +267,7 @@ function build_tombstone(textConfig, layoutConfig, maxBounds) {
     var words, stone, momument;
     words = layout(textConfig, layoutConfig);
     words = words.translate([0, 0, (layoutConfig.monument.body_thickness / 2) - layoutConfig.monument.engrave_depth]);
-    stone = wrapWords(words, layoutConfig).setColor([.4, .4, .4]);
+    stone = build_stone_around_words(words, layoutConfig).setColor([.4, .4, .4]);
     monument = difference(stone, words);
     monument = monument.center();
     monument = monument.rotateX(90);
