@@ -95,7 +95,7 @@ function layout_epitaph(words, config, o) {
             maxEpitaphLength = epSize[0];
         }
         if (t > 0) {
-            epiOrigin[1] = epiOrigin[1] + epLineHeight * -1;
+            epiOrigin[1] = epiOrigin[1] + epLineHeight * -1.2;
         }
         epObj = epObj.translate(epiOrigin);
         epiObjs.push(epObj);
