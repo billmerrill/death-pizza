@@ -154,7 +154,7 @@ function layout(words, config) {
             config.canvas.width, {
                 'bottom': .8
             },
-            1
+            .99
         ),
         layout_justified_line(words.firstName,
             config.firstName.weight,
