@@ -12,6 +12,7 @@
 +---------------------+
  */
 
+/* jslint esversion: 6 */
 var GLOBAL_CANVAS_CURSOR;
 
 function get_bounds_size(b) {
@@ -61,7 +62,7 @@ function prepare_epitaph_text(words, config) {
             }
             if (word_parts[wp].length > 0) {
                 if (line.length > 0) {
-                    line += " "
+                    line += " ";
                 }
                 line += word_parts[wp];
             }
@@ -72,8 +73,8 @@ function prepare_epitaph_text(words, config) {
     return lines;
 }
 
-function layout_epitaph(words, config, o) {
-    var epTexts = prepare_epitaph_text(words.epitaph, config),
+function layout_epitaph(epitaph, config, o) {
+    var epTexts = prepare_epitaph_text(epitaph, config),
         t, epLineHeight,
         epiObjs = [],
         epiOrigin = [0, 0],
@@ -105,20 +106,19 @@ function layout_epitaph(words, config, o) {
     epiObjs.forEach(function(l, i, arr) {
         var lSize = get_object_size(l);
         if (lSize[0] != maxEpitaphLength) {
-            // epiObjs[i] = l.translate([10, 0,0]);
             epiObjs[i] = l.translate([(maxEpitaphLength - lSize[0]) / 2, 0, 0]);
         }
     });
 
     epitaphObj = union(epiObjs);
     eoSize = get_object_size(epitaphObj);
-    eoScale = config.canvas.width / eoSize[0]
+    eoScale = config.canvas.width / eoSize[0];
     if (eoScale > 1) {
         eoScale = 1;
     }
     epitaphObj = epitaphObj.scale([eoScale, eoScale, 1]);
 
-    eoSize = get_object_size(epitaphObj)
+    eoSize = get_object_size(epitaphObj);
     // add the height of single line for cussor spacing
     GLOBAL_CANVAS_CURSOR[1] += -1 * (epSize[1] * eoScale);
     epitaphObj = epitaphObj.translate(GLOBAL_CANVAS_CURSOR);
@@ -127,7 +127,7 @@ function layout_epitaph(words, config, o) {
 }
 
 
-function layout_justified_line(text, weight, depth, canvas_width, margins, max_scale = 1) {
+function layout_justified_line(text, weight, depth, canvas_width, margins, max_scale=1) {
     // GLOBAL_CANVAS_CURSOR is global
     var textObj = make_line_of_text(text, weight, depth, [0, 0]),
         textSize = get_object_size(textObj),
@@ -144,9 +144,9 @@ function layout_justified_line(text, weight, depth, canvas_width, margins, max_s
 }
 
 
-function layout(words, config) {
+function layout_traditional(words, config) {
     // global
-    GLOBAL_CANVAS_CURSOR = [0, 0]
+    GLOBAL_CANVAS_CURSOR = [0, 0];
 
     var maxTextLineWidth, textObjs;
 
@@ -155,26 +155,65 @@ function layout(words, config) {
             config.lastName.weight,
             config.lastName.depth,
             config.canvas.width, {
-                'bottom': .8
+                'bottom': 0.8
             },
-            .99
+            0.99
         ),
         layout_justified_line(words.firstName,
             config.firstName.weight,
             config.firstName.depth,
             config.canvas.width, {
-                'bottom': .5
+                'bottom': 0.5
             },
-            .5
+            0.5
         ),
         layout_justified_line(words.dateSpan,
             config.dateSpan.weight,
             config.dateSpan.depth,
             config.canvas.width, {
-                'bottom': .5
+                'bottom': 0.5
             },
-            .5),
-        layout_epitaph(words, config, GLOBAL_CANVAS_CURSOR)
+            0.5),
+        layout_epitaph(words.epitaph, config, GLOBAL_CANVAS_CURSOR)
+    ];
+
+    maxTextLineWidth = Math.max(...textObjs.map(function(x) {
+        return get_object_size(x)[0];
+    }));
+    textObjs.forEach(function(l, i, arr) {
+        var lSize = get_object_size(l);
+        if (lSize[0] != maxTextLineWidth) {
+            textObjs[i] = l.translate([(maxTextLineWidth - lSize[0]) / 2, 0, 0]);
+        }
+    });
+
+    return union(...textObjs);
+}
+
+function layout_comic(words, config) {
+    // global
+    GLOBAL_CANVAS_CURSOR = [0, 0];
+
+    var maxTextLineWidth, textObjs;
+
+    textObjs = [
+        layout_justified_line("Here lies",
+            config.lastName.weight,
+            config.lastName.depth,
+            config.canvas.width, {
+                'bottom': 1
+            },
+            0.3
+        ),
+        layout_justified_line(words.firstName,
+            config.firstName.weight,
+            config.firstName.depth,
+            config.canvas.width, {
+                'bottom': 1
+            },
+            0.99
+        ),
+        layout_epitaph('"' + words.epitaph + '"', config, GLOBAL_CANVAS_CURSOR)
     ];
 
     maxTextLineWidth = Math.max(...textObjs.map(function(x) {
@@ -207,8 +246,8 @@ function create_stone() {
 function build_stone_around_words(words, config) {
     var wordsSize, p, c1, c2, objects, monument;
     wordsSize = get_object_size(words);
-    p = config.monument.padding
-    bodyZ = config.monument.body_thickness
+    p = config.monument.padding;
+    bodyZ = config.monument.body_thickness;
     step = config.monument.base_dims;
     c1 = [-p, 0, -bodyZ / 2.0];
     c2 = [wordsSize[0] + p, -1 * wordsSize[1] - 2 * p, bodyZ / 2.0];
@@ -239,6 +278,8 @@ function build_stone_around_words(words, config) {
         .translate([wordsSize[0] / 2, 0, 0])
     ];
 
+
+
     return difference(union(objects), make_signature(c1, c2, config));
 }
 
@@ -249,41 +290,50 @@ function make_signature(c1, c2, config) {
         sigObj, sigSize, sigScale;
     sigObj = make_line_of_text("soon.rip", 3, 20, [0, 0]);
     sigSize = get_object_size(sigObj);
-    sigScale = (step[1] * .8) / sigSize[1];
+    sigScale = (step[1] * 0.8) / sigSize[1];
     sigObj = sigObj.scale(sigScale, sigScale, 0);
     sigObj = sigObj.rotateY(180);
     sigSize = get_object_size(sigObj);
-    sigObj = sigObj.translate([1.5 * step[1], c2[1] - (.85 * sigSize[1]), -1 * step[2] - .7 * (bodyZ / 2)]);
+    sigObj = sigObj.translate([1.5 * step[1], c2[1] - (0.85 * sigSize[1]), -1 * step[2] - 0.7 * (bodyZ / 2)]);
 
     return sigObj;
 }
 
-function scale_to_bounds(obj, bounds) {
+function get_final_scale(obj, bounds) {
     var objSize = get_object_size(obj),
-        scales = [bounds[0] / objSize[0], bounds[1] / objSize[1], bounds[2] / objSize[2]]
+        scales = [bounds[0] / objSize[0], bounds[1] / objSize[1], bounds[2] / objSize[2]];
     scale = Math.min(bounds[0] / objSize[0], bounds[1] / objSize[1], bounds[2] / objSize[2]);
+    return scale;
+}
+
+function scale_to_bounds(obj, bounds) {
+    scale = get_final_scale(obj, bounds);
     obj = obj.scale(scale, scale, scale);
     return obj;
 }
 
-function build_tombstone(textConfig, layoutConfig, maxBounds) {
+function build_tombstone(textConfig, layoutConfig) {
     var words, stone, momument;
-    words = layout(textConfig, layoutConfig);
+    if (layoutConfig.monument.style === 'comic') {
+        words = layout_comic(textConfig, layoutConfig);
+    } else {
+        words = layout_traditional(textConfig, layoutConfig);
+    }
     words = words.translate([0, 0, (layoutConfig.monument.body_thickness / 2) - layoutConfig.monument.engrave_depth]);
-    stone = build_stone_around_words(words, layoutConfig).setColor([.4, .4, .4]);
+    stone = build_stone_around_words(words, layoutConfig).setColor([0.4, 0.4, 0.4]);
     monument = difference(stone, words);
     monument = monument.center();
     monument = monument.rotateX(90);
 
-    return scale_to_bounds(monument, maxBounds);
+    return scale_to_bounds(monument, layoutConfig.monument.finals_size_mm);
 }
 
 function main(param) {
-    var textConfig = {
-            lastName: param.lastName,
-            firstName: param.firstName,
-            dateSpan: param.dateSpan,
-            epitaph: param.epitaph
+    var text_config = {
+        lastName: param.lastName,
+        firstName: param.firstName,
+        dateSpan: param.dateSpan,
+        epitaph: param.epitaph
         },
         layout_config = {
             'canvas': {
@@ -310,9 +360,10 @@ function main(param) {
                 'padding': 10,
                 'body_thickness': 20,
                 'base_dims': [10, 10, 10],
-                'engrave_depth': 4
+                'engrave_depth': 4,
+                'style': 'comic'
+                'final_size_mm' = [100, 100, 100];
             }
         },
-        target_size = [100, 100, 100];
-    return build_tombstone(textConfig, layout_config, target_size);
+    return build_tombstone(text_config, layout_config);
 }
